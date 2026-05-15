@@ -37,6 +37,68 @@ MainView::~MainView()
 	m_mainController = nullptr;
 }
 
+void MainView::ImportPacketLog()
+{
+	try {
+		CFileDialog dlg(TRUE, _T("json"), NULL,
+			OFN_FILEMUSTEXIST | OFN_HIDEREADONLY,
+			_T("JSON Files (*.json)|*.json|All Files (*.*)|*.*||"));
+
+		if (dlg.DoModal() == IDOK) {
+			CString cpath = dlg.GetPathName();
+			std::wstring path(cpath.GetString());
+			m_mainController->LoadPacketLogFromJSON(path);
+		}
+	}
+	catch (const std::exception& e) {
+		std::string errorMsg = e.what();
+		std::wstring wErrorMsg = PacketScript::MultiByte2WideChar(errorMsg.c_str(), errorMsg.size());
+		MBError(wErrorMsg);
+	}
+}
+
+void MainView::ExportPacketLog()
+{
+	try {
+		SYSTEMTIME st;
+		GetLocalTime(&st);
+
+		CString timestamp;
+		timestamp.Format(_T("%04d%02d%02d_%02d%02d%02d"),
+			st.wYear, st.wMonth, st.wDay,
+			st.wHour, st.wMinute, st.wSecond);
+
+		CString defaultName;
+		defaultName.Format(_T("PacketLog_%s.json"), timestamp.GetString());
+
+		CFileDialog dlg(FALSE, _T("json"), defaultName,
+			OFN_OVERWRITEPROMPT,
+			_T("JSON Files (*.json)|*.json|All Files (*.*)|*.*||"));
+
+		if (dlg.DoModal() == IDOK) {
+			CString cpath = dlg.GetPathName();
+			std::wstring path(cpath.GetString());
+
+			std::vector<int> selectedIndices;
+			POSITION pos = m_packetLogListCtrl.GetFirstSelectedItemPosition();
+			while (pos != NULL)
+			{
+				int nSelectedIndex = m_packetLogListCtrl.GetNextSelectedItem(pos);
+				UINT state = m_packetLogListCtrl.GetItemState(nSelectedIndex, LVIS_FOCUSED);
+				if (state != 0) {
+					selectedIndices.push_back(nSelectedIndex);
+				}
+			}
+			m_mainController->SavePacketLogToJSON(path, selectedIndices);
+		}
+	}
+	catch (const std::exception& e) {
+		std::string errorMsg = e.what();
+		std::wstring wErrorMsg = PacketScript::MultiByte2WideChar(errorMsg.c_str(), errorMsg.size());
+		MBError(wErrorMsg);
+	}
+}
+
 void MainView::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
@@ -54,6 +116,8 @@ BOOL MainView::OnInitDialog()
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
 	if (pSysMenu != nullptr) {
 		pSysMenu->AppendMenu(MF_SEPARATOR);
+		pSysMenu->AppendMenu(MF_STRING, IDM_IMPORT_MENU, L"Import");
+		pSysMenu->AppendMenu(MF_STRING, IDM_EXPORT_MENU, L"Export");
 		pSysMenu->AppendMenu(MF_STRING, IDM_SETTING_MENU, L"Setting");
 		pSysMenu->AppendMenu(MF_STRING, IDM_SEARCH_MENU, L"Search\tCtrl+F");
 		pSysMenu->AppendMenu(MF_STRING, IDM_JUMP_MENU, L"Jump\tCtrl+G");
@@ -130,6 +194,12 @@ END_MESSAGE_MAP()
 
 void MainView::OnSysCommand(UINT nID, LPARAM lParam) {
 	switch (nID) {
+	case IDM_IMPORT_MENU:
+		this->ImportPacketLog();
+		break;
+	case IDM_EXPORT_MENU:
+		this->ExportPacketLog();
+		break;
 	case IDM_SETTING_MENU: {
 		m_settingView->DoModal();
 		break;

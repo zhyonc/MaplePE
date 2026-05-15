@@ -2,17 +2,14 @@
 // Main Dialog
 #define IDD_MAIN_DIALOG                 1000
 #define IDI_MAIN_ICON                   1001
-#define IDM_SETTING_MENU                1002
-#define IDM_SEARCH_MENU					1003
-#define IDM_JUMP_MENU					1004
-#define IDC_PACKET_LOG_LIST             1005
-#define IDC_DATA_DETAIL_EDIT			1006
-#define IDC_PATCH_BUTTON                1007
-#define IDC_EDIT_BUTTON                 1008
-#define IDC_ClEAR_BUTTON                1009
-#define IDC_PID_EDIT                    1010
-#define IDC_IS_INPACKET_CHECK           1011
-#define IDC_MAIN_SEND_BUTTON            1012
+#define IDC_PACKET_LOG_LIST             1002
+#define IDC_DATA_DETAIL_EDIT			1003
+#define IDC_PATCH_BUTTON                1004
+#define IDC_EDIT_BUTTON                 1005
+#define IDC_ClEAR_BUTTON                1006
+#define IDC_PID_EDIT                    1007
+#define IDC_IS_INPACKET_CHECK           1008
+#define IDC_MAIN_SEND_BUTTON            1009
 // Setting Dialog
 #define IDD_SETTING_DIALOG              1100
 #define IDC_SETTING_MFCPROPERTYGRID     1101
@@ -43,3 +40,9 @@
 // GenCode Dialog
 #define IDD_GEN_CODE_DIALOG             1600
 #define IDC_GEN_CODE_EDIT				1601
+// Menu
+#define IDM_IMPORT_MENU                 2000
+#define IDM_EXPORT_MENU				    2001
+#define IDM_SETTING_MENU                2002
+#define IDM_SEARCH_MENU					2003
+#define IDM_JUMP_MENU					2004

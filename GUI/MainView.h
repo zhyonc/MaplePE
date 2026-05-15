@@ -30,6 +30,9 @@ private:
 	enum { IDD = IDD_MAIN_DIALOG };
 #endif
 
+	void ImportPacketLog();
+	void ExportPacketLog();
+
 protected:
 	HICON m_hIcon = nullptr;
 	CListCtrl m_packetLogListCtrl;

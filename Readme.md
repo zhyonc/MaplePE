@@ -8,6 +8,7 @@ A MapleStory Packet Editor that can parse packet structures and send custom pack
 - Edit packet data and send it to the client
 - Generate simple code from package structures
 - Filter specific opcodes to avoid logging certain packets (e.g. 1,2,3,4)
+- Import and export packet logs in JSON format
 
 ## How to use
 ### Ready
@@ -111,7 +112,7 @@ void __fastcall CClientSocket::SendPacket(CClientSocket *this, int a2, COutPacke
 	- C++ MFC for the latest v143 build tools (x86 & x64)
 	- `MFC-GridCtrl` linked as a static library (.lib)
 - Networking library: WinSock2 (Windows Sockets API)
-- Hooking library: `MemoryLib` linked as a static library (.lib)
+- Hooking library: [MemorySDK](https://github.com/zhyonc/MemorySDK) linked as a static library (.lib)
 - To maintain control ID order
 	- If a new control is added via Resource View, please manually copy its ID to `resource_ids.h`
 	- Remove all auto-generated control IDs from `resource.h` and include `resource_ids.h` in `resource.h`

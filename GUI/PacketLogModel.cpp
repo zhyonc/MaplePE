@@ -25,6 +25,18 @@ PacketLogModel::PacketLogModel(int pid, bool isInPacket, const std::wstring& dat
 	m_data = data;
 }
 
+PacketLogModel::PacketLogModel(int pid, int index, bool isInPacket, bool isTypeHeader1Byte, int length, int opcode, std::wstring& data, std::vector<PacketAction>& actions)
+{
+	m_pid = pid;
+	m_index = index;
+	m_isInPacket = isInPacket;
+	m_isTypeHeader1Byte = isTypeHeader1Byte;
+	m_length = length;
+	m_opcode = opcode;
+	m_data = data;
+	m_actions = actions;
+}
+
 const bool PacketLogModel::IsEmpty() const
 {
 	return m_pid == 0;
@@ -38,6 +50,11 @@ const int PacketLogModel::GetPID() const
 const std::wstring PacketLogModel::GetPIDStr() const
 {
 	return std::to_wstring(m_pid);
+}
+
+const int PacketLogModel::GetIndex() const
+{
+	return static_cast<int>(m_index);
 }
 
 const std::wstring PacketLogModel::GetIndexStr() const
@@ -55,8 +72,23 @@ const bool PacketLogModel::IsInPacket() const
 	return m_isInPacket;
 }
 
+const bool PacketLogModel::IsTypeHeader1Byte() const
+{
+	return m_isTypeHeader1Byte;
+}
+
+const int PacketLogModel::GetLength() const
+{
+	return static_cast<int>(m_length);
+}
+
 const std::wstring PacketLogModel::GetLengthStr() const {
 	return std::to_wstring(m_length);
+}
+
+const int PacketLogModel::GetOpcode() const
+{
+	return static_cast<int>(m_opcode);
 }
 
 const std::wstring PacketLogModel::GetOpcodeStr() const

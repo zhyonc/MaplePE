@@ -11,11 +11,21 @@ namespace {
 namespace PacketScript {
 
 	const size_t kCharacterNameLength = 13;
-	const size_t kLengthEight = 8;
+	const size_t kBuffer1 = 1;
+	const size_t kBuffer2 = 2;
+	const size_t kBuffer4 = 4;
+	const size_t kBuffer8 = 8;
 
-	void InitHexStream(std::wstringstream& ss);
+	template<typename Stream>
+	void InitHexStream(Stream& ss);
 
-	std::wstring Int2Hex(ULONG_PTR v);
+	std::string Int2Hex(ULONG_PTR v);
+
+	std::wstring Int2HexW(ULONG_PTR v);
+
+	ULONG_PTR HexToInt(const std::string& str);
+
+	ULONG_PTR HexToIntW(const std::wstring& wstr);
 
 	void Buffer2Data(std::vector<uint8_t>& buffer, std::wstring& data);
 

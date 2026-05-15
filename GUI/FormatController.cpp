@@ -95,7 +95,7 @@ void FormatController::initPacketFormatModels()
 			segment = PacketScript::GetHexSegment(data, segmentPos, action.Size);
 			break;
 		}
-		std::wstring retAddr = PacketScript::Int2Hex(action.RetAddr);
+		std::wstring retAddr = PacketScript::Int2HexW(action.RetAddr);
 		uint8_t actionType = static_cast<uint8_t>(action.Type);
 		std::wstring actionText = kActionText.at(action.Type);
 		PacketFormatModel format(i, retAddr, actionType, actionText, action.Size, value, segment);

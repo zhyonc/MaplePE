@@ -5,15 +5,41 @@
 
 namespace PacketScript {
 
-	void InitHexStream(std::wstringstream& ss) {
-		ss << std::uppercase << std::hex << std::setfill(L'0');
+	template<typename Stream>
+	void InitHexStream(Stream& ss) {
+		using CharT = typename Stream::char_type;
+		ss << std::uppercase << std::hex << std::setfill(CharT('0'));
 	}
 
-	std::wstring Int2Hex(ULONG_PTR v) {
+	std::string Int2Hex(ULONG_PTR v)
+	{
+		std::ostringstream ss;
+		InitHexStream(ss);
+		ss << "0x" << std::setw(8) << v;
+		return ss.str();
+	}
+
+	std::wstring Int2HexW(ULONG_PTR v) {
 		std::wstringstream ss;
 		InitHexStream(ss);
 		ss << L"0x" << std::setw(8) << v;
 		return ss.str();
+	}
+
+	ULONG_PTR HexToInt(const std::string& str)
+	{
+		if (str.empty()) {
+			return 0;
+		}
+		return static_cast<ULONG_PTR>(std::stoull(str, nullptr, 0));
+	}
+
+	ULONG_PTR HexToIntW(const std::wstring& wstr)
+	{
+		if (wstr.empty()) {
+			return 0;
+		}
+		return static_cast<ULONG_PTR>(std::stoull(wstr, nullptr, 0));
 	}
 
 	void Buffer2Data(std::vector<uint8_t>& buffer, std::wstring& data) {
@@ -91,14 +117,12 @@ namespace PacketScript {
 
 	bool IsTimeValid(const SYSTEMTIME& st) {
 		// Valid if epoch, fallback default, or within 21st century range
-		// System Time 0000-00-00 00:00:00 <-> FileTime 1601-01-01 00:00:00 
-		// System Time 0000-00-00 00:00:00 <-> FileTime 1601-01-03 00:37:51
-		// System Time 0001-01-01 00:00:00 <-> FileTime 1754-08-30 22:43:41
-		bool isZeroTime = st.wYear == 1601 && st.wMonth == 1 && st.wDay == 1 && st.wHour == 0 && st.wMinute == 0 && st.wSecond == 0;
+		// isMinimalTime System Time 0000-00-00 00:00:00 <-> FileTime 1601-01-03 00:37:51
+		// isFallbackTime System Time 0001-01-01 00:00:00 <-> FileTime 1754-08-30 22:43:41
 		bool isMinimalTime = st.wYear == 1601 && st.wMonth == 1 && st.wDay == 3 && st.wHour == 0 && st.wMinute == 37 && st.wSecond == 51;
 		bool isFallbackTime = st.wYear == 1754 && st.wMonth == 8 && st.wDay == 30 && st.wHour == 22 && st.wMinute == 43 && st.wSecond == 41;
-		bool isValidTime = st.wYear >= 1970 && st.wYear <= 3000 && st.wMonth >= 1 && st.wMonth <= 12 && st.wDay >= 1 && st.wDay <= 31;
-		return isZeroTime || isMinimalTime || isFallbackTime || isValidTime;
+		bool isValidTime = st.wYear >= 1900 && st.wYear <= 2079 && st.wMonth >= 1 && st.wMonth <= 12 && st.wDay >= 1 && st.wDay <= 31;
+		return isMinimalTime || isFallbackTime || isValidTime;
 	}
 
 	std::wstring GetHexSegment(const std::wstring& data, size_t& segmentPos, size_t uSize) {
@@ -166,6 +190,9 @@ namespace PacketScript {
 
 	SYSTEMTIME DecodeFT(const std::vector<uint8_t>& buffer, size_t& pos, uint64_t& value) {
 		value = Decode8(buffer, pos);
+		if (value == 0 || value == UINT64_MAX) {
+			return {};
+		}
 		FILETIME ft{};
 		SYSTEMTIME st{};
 		ft.dwLowDateTime = static_cast<uint32_t>(value & 0xFFFFFFFF);
@@ -204,24 +231,21 @@ namespace PacketScript {
 			pos += kCharacterNameLength;
 			return wStr;
 		}
-		case kLengthEight: {
+		case kBuffer1:
+			return std::to_wstring(static_cast<int8_t>(Decode1(buffer, pos)));
+		case kBuffer2:
+			return std::to_wstring(static_cast<int16_t>(Decode2(buffer, pos)));
+		case kBuffer4:
+			return std::to_wstring(static_cast<int32_t>(Decode4(buffer, pos)));
+		case kBuffer8: {
 			// Decode FT or number
 			uint64_t value = 0;
 			SYSTEMTIME st = DecodeFT(buffer, pos, value);
 			return IsTimeValid(st) ? FormatSystemTime(st) : std::to_wstring(static_cast<int64_t>(value));
 		}
 		default:
-			uint8_t firstValue = buffer[pos];
-			bool isDifferent = false;
-			for (size_t i = pos; i < pos + uSize; i++)
-			{
-				if (buffer[i] != firstValue) {
-					isDifferent = true;
-					break;
-				}
-			}
 			pos += uSize;
-			return isDifferent ? std::wstring() : std::to_wstring(static_cast<int8_t>(firstValue));
+			return std::wstring();
 		}
 	}
 
@@ -303,7 +327,7 @@ namespace PacketScript {
 			buffer.insert(buffer.end(), p, p + kCharacterNameLength);
 			break;
 		}
-		case kLengthEight: {
+		case kBuffer8: {
 			EncodeFT(buffer, data);
 			break;
 		}

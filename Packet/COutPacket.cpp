@@ -14,6 +14,15 @@ namespace {
 		OutPacket* oPacket = static_cast<OutPacket*>(ecx);
 		return oPacket->m_uOffset > 0;
 	}
+
+	static ULONG_PTR GetCaller(int depth) {
+		void* stack[3] = {};
+		USHORT frames = RtlCaptureStackBackTrace(0, 3, stack, nullptr);
+		if (depth >= 0 && depth < 3 && depth < frames) {
+			return (ULONG_PTR)stack[depth];
+		}
+		return 0;
+	}
 }
 
 namespace COutPacket {
@@ -78,7 +87,6 @@ namespace COutPacket {
 
 	void(__thiscall* Encode1)(void* ecx, uint8_t n) = nullptr;
 	void __fastcall Encode1_Hook(void* ecx, FASTCALL_EDX_PADDING uint8_t n) {
-		// COutPacket::COutPacket(opcodeIs1Byte)
 		auto action = PacketAction{ PacketActionType::Encode1,1,(ULONG_PTR)_ReturnAddress() };
 		auto actions = GetActions(ecx);
 		if (actions == nullptr) {
@@ -86,6 +94,11 @@ namespace COutPacket {
 				gActionsMap[ecx] = std::vector<PacketAction>{};
 			}
 			else {
+				// COutPacket::COutPacket(opcodeIs1Byte)
+				ULONG_PTR callerAddr = GetCaller(2);
+				if (callerAddr > 0) {
+					action.RetAddr = callerAddr;
+				}
 				gActionsMap[ecx] = std::vector<PacketAction>{ action };
 				gOpcodeMap[ecx] = n;
 			}
@@ -98,7 +111,6 @@ namespace COutPacket {
 
 	void(__thiscall* Encode2)(void* ecx, uint16_t n) = nullptr;
 	void __fastcall Encode2_Hook(void* ecx, FASTCALL_EDX_PADDING uint16_t n) {
-		// COutPacket::COutPacket(opcode)
 		auto action = PacketAction{ PacketActionType::Encode2,2,(ULONG_PTR)_ReturnAddress() };
 		auto actions = GetActions(ecx);
 		if (actions == nullptr) {
@@ -106,6 +118,11 @@ namespace COutPacket {
 				gActionsMap[ecx] = std::vector<PacketAction>{};
 			}
 			else {
+				// COutPacket::COutPacket(opcode)
+				ULONG_PTR callerAddr = GetCaller(2);
+				if (callerAddr > 0) {
+					action.RetAddr = callerAddr;
+				}
 				gActionsMap[ecx] = std::vector<PacketAction>{ action };
 				gOpcodeMap[ecx] = n;
 			}
