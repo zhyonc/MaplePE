@@ -4,6 +4,14 @@
 #include <string>
 #include "Opcode.h"
 
+#define FT_EMPTY -505255104000000000 // ST 0000-00-00 00:00:00
+#define FT_ZERO -504911232000000000 // ST 0001-01-01 00:00:00
+#define FT_ZERO_OVERFLOW 48491090210000000 // ST 1754-08-30 22:43:41
+#define FT_SQL_MIN 47966688000000000 // ST 1753-01-01 00:00:00
+#define FT_SQL_MIN_DATE -189657504000000000 // ST 1000-01-01 00:00:00
+#define FT_START 94354848000000000 // ST 1900-01-01 00:00:00
+#define FT_END 150842304000000000 // ST 2079-01-01 00:00:00
+
 namespace {
 	const UINT kSystemAnsiCodePage = GetACP();
 }
@@ -53,7 +61,7 @@ namespace PacketScript {
 
 	uint64_t Decode8(const std::vector<uint8_t>& buffer, size_t& pos);
 
-	SYSTEMTIME DecodeFT(const std::vector<uint8_t>& buffer, size_t& pos, uint64_t& value);
+	SYSTEMTIME* DecodeFT(const std::vector<uint8_t>& buffer, size_t& pos, int64_t& value);
 
 	std::wstring DecodeStr(const std::vector<uint8_t>& buffer, size_t& pos, size_t& uSize);
 

@@ -116,13 +116,31 @@ namespace PacketScript {
 	}
 
 	bool IsTimeValid(const SYSTEMTIME& st) {
-		// Valid if epoch, fallback default, or within 21st century range
-		// isMinimalTime System Time 0000-00-00 00:00:00 <-> FileTime 1601-01-03 00:37:51
-		// isFallbackTime System Time 0001-01-01 00:00:00 <-> FileTime 1754-08-30 22:43:41
-		bool isMinimalTime = st.wYear == 1601 && st.wMonth == 1 && st.wDay == 3 && st.wHour == 0 && st.wMinute == 37 && st.wSecond == 51;
-		bool isFallbackTime = st.wYear == 1754 && st.wMonth == 8 && st.wDay == 30 && st.wHour == 22 && st.wMinute == 43 && st.wSecond == 41;
-		bool isValidTime = st.wYear >= 1900 && st.wYear <= 2079 && st.wMonth >= 1 && st.wMonth <= 12 && st.wDay >= 1 && st.wDay <= 31;
-		return isMinimalTime || isFallbackTime || isValidTime;
+		// ST_START -> ST_END
+		if (st.wYear >= 1900 && st.wYear <= 2079) {
+			return st.wMonth >= 1 && st.wMonth <= 12 && st.wDay >= 1 && st.wDay <= 31;
+		}
+		// ST_EMPTY
+		if (st.wYear == 0 && st.wMonth == 0 && st.wDay == 0) {
+			return true;
+		}
+		// ST_ZERO
+		if (st.wYear == 1 && st.wMonth == 1 && st.wDay == 1) {
+			return true;
+		}
+		// ST_ZERO_OVERFLOW
+		if (st.wYear == 1754 && st.wMonth == 8 && st.wDay == 30 && st.wHour == 22 && st.wMinute == 43 && st.wSecond == 41) {
+			return true;
+		}
+		// ST_SQL_MIN
+		if (st.wYear == 1753 && st.wMonth == 1 && st.wDay == 1) {
+			return true;
+		}
+		// ST_SQL_MIN_DATE
+		if (st.wYear == 1000 && st.wMonth == 1 && st.wDay == 1) {
+			return true;
+		}
+		return false;
 	}
 
 	std::wstring GetHexSegment(const std::wstring& data, size_t& segmentPos, size_t uSize) {
@@ -188,19 +206,37 @@ namespace PacketScript {
 		return value;
 	}
 
-	SYSTEMTIME DecodeFT(const std::vector<uint8_t>& buffer, size_t& pos, uint64_t& value) {
-		value = Decode8(buffer, pos);
-		if (value == 0 || value == UINT64_MAX) {
-			return {};
+	SYSTEMTIME* DecodeFT(const std::vector<uint8_t>& buffer, size_t& pos, int64_t& value) {
+		value = static_cast<int64_t>(Decode8(buffer, pos));
+		if (value == 0 || value == -1) {
+			return nullptr;
+		}
+		if (value == FT_EMPTY) {
+			SYSTEMTIME st{};
+			return &st;
+		}
+		if (value == FT_ZERO) {
+			SYSTEMTIME st{};
+			st.wYear = 1;
+			st.wMonth = 1;
+			st.wDay = 1;
+			return &st;
+		}
+		if (value == FT_SQL_MIN_DATE) {
+			SYSTEMTIME st{};
+			st.wYear = 1000;
+			st.wMonth = 1;
+			st.wDay = 1;
+			return &st;
 		}
 		FILETIME ft{};
 		SYSTEMTIME st{};
 		ft.dwLowDateTime = static_cast<uint32_t>(value & 0xFFFFFFFF);
 		ft.dwHighDateTime = static_cast<uint32_t>(value >> 32);
 		if (FileTimeToSystemTime(&ft, &st)) {
-			return st;
+			return &st;
 		}
-		return {};
+		return nullptr;
 	}
 
 	std::wstring DecodeStr(const std::vector<uint8_t>& buffer, size_t& pos, size_t& uSize) {
@@ -239,9 +275,12 @@ namespace PacketScript {
 			return std::to_wstring(static_cast<int32_t>(Decode4(buffer, pos)));
 		case kBuffer8: {
 			// Decode FT or number
-			uint64_t value = 0;
-			SYSTEMTIME st = DecodeFT(buffer, pos, value);
-			return IsTimeValid(st) ? FormatSystemTime(st) : std::to_wstring(static_cast<int64_t>(value));
+			int64_t value = 0;
+			SYSTEMTIME* st = DecodeFT(buffer, pos, value);
+			if (st == nullptr || !IsTimeValid(*st)) {
+				return std::to_wstring(value);
+			}
+			return FormatSystemTime(*st);
 		}
 		default:
 			pos += uSize;
